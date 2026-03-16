@@ -2,6 +2,9 @@ import type { Metadata } from 'next'
 import { Lightbulb, TrendingUp } from 'lucide-react'
 import { getScoreForFarm } from '@/lib/mock'
 
+import { isMockMode } from '@/lib/is-mock-mode'
+const MOCK_MODE = isMockMode()
+
 export const metadata: Metadata = { title: 'Recommendations' }
 
 const RUBRIC_GUIDANCE: Record<string, { label: string; threshold: number; tips: string[] }> = {
@@ -49,7 +52,6 @@ const RUBRIC_GUIDANCE: Record<string, { label: string; threshold: number; tips: 
   },
 }
 
-const MOCK_MODE = process.env.NEXT_PUBLIC_MOCK_MODE === 'true'
 
 export default async function RecommendationsPage() {
   const snapshot = MOCK_MODE ? getScoreForFarm('farm-1') : null

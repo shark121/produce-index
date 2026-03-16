@@ -7,11 +7,13 @@ import { formatDateTime } from '@/lib/utils'
 import { Upload, FileText } from 'lucide-react'
 import { MOCK_SUBMISSIONS, getCropsForFarm } from '@/lib/mock'
 
+import { isMockMode } from '@/lib/is-mock-mode'
+const MOCK_MODE = isMockMode()
+
 export const metadata: Metadata = { title: 'Submission' }
 
 interface Props { params: Promise<{ id: string }> }
 
-const MOCK_MODE = process.env.NEXT_PUBLIC_MOCK_MODE === 'true'
 
 const CATEGORIES = ['Nutritional Value', 'Food Safety', 'Supply Reliability', 'Local Accessibility', 'Affordability']
 

@@ -7,6 +7,9 @@ import { Button } from '@/components/ui/button'
 import { MapPin, Sprout, Handshake, Truck } from 'lucide-react'
 import { getFarmById, getScoreForFarm, getCropsForFarm, getDistributionForFarm } from '@/lib/mock'
 
+import { isMockMode } from '@/lib/is-mock-mode'
+const MOCK_MODE = isMockMode()
+
 export const metadata: Metadata = { title: 'Farm Scorecard' }
 
 interface Props { params: Promise<{ id: string }> }
@@ -19,7 +22,6 @@ const CATEGORIES = [
   { key: 'affordability' as const,      label: 'Affordability',       weight: 15, color: '#FF3B30' },
 ]
 
-const MOCK_MODE = process.env.NEXT_PUBLIC_MOCK_MODE === 'true'
 
 const distTypeLabel: Record<string, string> = {
   farmers_market: 'Farmers Market', grocery: 'Grocery', food_bank: 'Food Bank',

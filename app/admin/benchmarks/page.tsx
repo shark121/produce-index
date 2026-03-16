@@ -3,9 +3,11 @@ import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
 import { MOCK_BENCHMARKS } from '@/lib/mock'
 
+import { isMockMode } from '@/lib/is-mock-mode'
+const MOCK_MODE = isMockMode()
+
 export const metadata: Metadata = { title: 'Benchmarks' }
 
-const MOCK_MODE = process.env.NEXT_PUBLIC_MOCK_MODE === 'true'
 
 export default async function BenchmarksPage() {
   const benchmarks = MOCK_MODE ? MOCK_BENCHMARKS : []

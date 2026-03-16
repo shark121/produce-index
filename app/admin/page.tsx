@@ -4,9 +4,11 @@ import { SubmissionStatusBadge } from '@/components/ui/status-badge'
 import { formatDateTime } from '@/lib/utils'
 import { getAdminQueue, MOCK_SUBMISSIONS } from '@/lib/mock'
 
+import { isMockMode } from '@/lib/is-mock-mode'
+const MOCK_MODE = isMockMode()
+
 export const metadata: Metadata = { title: 'Review Queue' }
 
-const MOCK_MODE = process.env.NEXT_PUBLIC_MOCK_MODE === 'true'
 
 export default async function AdminQueuePage() {
   const queue = MOCK_MODE ? getAdminQueue() : []

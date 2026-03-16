@@ -1,9 +1,11 @@
 import type { Metadata } from 'next'
 import { MOCK_SUBMISSIONS, MOCK_SCORES, MOCK_FARMS } from '@/lib/mock'
 
+import { isMockMode } from '@/lib/is-mock-mode'
+const MOCK_MODE = isMockMode()
+
 export const metadata: Metadata = { title: 'Analytics' }
 
-const MOCK_MODE = process.env.NEXT_PUBLIC_MOCK_MODE === 'true'
 
 export default async function AnalyticsPage() {
   const submissions = MOCK_MODE ? MOCK_SUBMISSIONS : []

@@ -7,11 +7,13 @@ import { ReviewPanel } from './review-panel'
 import { MOCK_SUBMISSIONS, getFarmById, getCropsForFarm } from '@/lib/mock'
 import { MapPin, Sprout } from 'lucide-react'
 
+import { isMockMode } from '@/lib/is-mock-mode'
+const MOCK_MODE = isMockMode()
+
 export const metadata: Metadata = { title: 'Review Submission' }
 
 interface Props { params: Promise<{ id: string }> }
 
-const MOCK_MODE = process.env.NEXT_PUBLIC_MOCK_MODE === 'true'
 
 export default async function ReviewSubmissionPage({ params }: Props) {
   const { id } = await params

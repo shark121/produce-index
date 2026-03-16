@@ -1,20 +1,13 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { isMockMode } from '@/lib/is-mock-mode'
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
 
-function isMockMode() {
-  return (
-    process.env.NEXT_PUBLIC_MOCK_MODE === 'true' ||
-    !SUPABASE_URL ||
-    SUPABASE_URL.includes('placeholder')
-  )
-}
-
 export async function updateSession(request: NextRequest) {
   // Pass through when mock mode is on or Supabase is not configured
-  if (isMockMode()) {
+  if (isMockMode()) { // no Supabase configured — pass through
     return NextResponse.next({ request })
   }
 

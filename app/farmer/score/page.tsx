@@ -4,6 +4,9 @@ import { VerificationStatusBadge } from '@/components/ui/status-badge'
 import { formatDateTime } from '@/lib/utils'
 import { getScoreForFarm } from '@/lib/mock'
 
+import { isMockMode } from '@/lib/is-mock-mode'
+const MOCK_MODE = isMockMode()
+
 export const metadata: Metadata = { title: 'PRI Score' }
 
 const CATEGORIES = [
@@ -14,7 +17,6 @@ const CATEGORIES = [
   { key: 'affordability' as const,      label: 'Affordability',       weight: 15, color: '#FF3B30' },
 ]
 
-const MOCK_MODE = process.env.NEXT_PUBLIC_MOCK_MODE === 'true'
 
 export default async function ScorePage() {
   const snapshot = MOCK_MODE ? getScoreForFarm('farm-1') : null

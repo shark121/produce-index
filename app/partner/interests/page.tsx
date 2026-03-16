@@ -4,9 +4,11 @@ import { formatDate } from '@/lib/utils'
 import type { PartnerInterest } from '@/lib/types'
 import { MOCK_INTERESTS } from '@/lib/mock'
 
+import { isMockMode } from '@/lib/is-mock-mode'
+const MOCK_MODE = isMockMode()
+
 export const metadata: Metadata = { title: 'My Interests' }
 
-const MOCK_MODE = process.env.NEXT_PUBLIC_MOCK_MODE === 'true'
 
 const statusVariant: Record<PartnerInterest['status'], 'default' | 'blue' | 'green'> = {
   pending: 'default', acknowledged: 'blue', connected: 'green',

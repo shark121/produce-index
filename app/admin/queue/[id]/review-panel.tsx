@@ -32,7 +32,7 @@ export function ReviewPanel({ submissionId }: Props) {
 
   async function submitDecision(decision: 'verified' | 'needs_changes') {
     setLoading(true)
-    const mockMode = process.env.NEXT_PUBLIC_MOCK_MODE === 'true'
+    const mockMode = !process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_MOCK_MODE === 'true' || process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder')
     if (mockMode) {
       await new Promise(r => setTimeout(r, 800))
       router.push('/admin')

@@ -2,7 +2,9 @@ import { redirect } from 'next/navigation'
 import { AdminSidebar } from '@/components/nav/admin-sidebar'
 import { MOCK_USERS } from '@/lib/mock'
 
-const MOCK_MODE = process.env.NEXT_PUBLIC_MOCK_MODE === 'true'
+import { isMockMode } from '@/lib/is-mock-mode'
+const MOCK_MODE = isMockMode()
+
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   let userName = MOCK_USERS.admin.fullName
