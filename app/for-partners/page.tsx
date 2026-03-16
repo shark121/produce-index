@@ -10,7 +10,7 @@ export default function ForPartnersPage() {
   return (
     <>
       <PublicNav />
-      <main className="mx-auto max-w-4xl px-6 py-20">
+      <main className="mx-auto max-w-4xl px-4 md:px-6 py-12 md:py-20">
         <h1 className="text-4xl font-bold text-[#1C1C1E] tracking-tight mb-4">For Partners</h1>
         <p className="text-xl text-[#48484A] leading-relaxed mb-16 max-w-2xl">
           Source confidently from farms you can trust. PRI gives you a standardized, independently

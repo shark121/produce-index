@@ -105,13 +105,13 @@ export default async function FarmScorecardPage({ params }: Props) {
         <h2 className="text-sm font-semibold text-[#1C1C1E] mb-3">Distribution channels</h2>
         <div className="space-y-2">
           {distribution.map((d) => (
-            <div key={d.id} className="flex items-center justify-between py-1.5 border-b border-[rgba(0,0,0,0.05)] last:border-0">
-              <div className="flex items-center gap-2">
-                <Truck className="h-3.5 w-3.5 text-[#8E8E93]" />
+            <div key={d.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-2 border-b border-[rgba(0,0,0,0.05)] last:border-0 gap-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <Truck className="h-3.5 w-3.5 text-[#8E8E93] shrink-0" />
                 <span className="text-sm text-[#1C1C1E]">{d.name}</span>
                 {d.servesLowIncomeArea && <Badge variant="blue">Low-income area</Badge>}
               </div>
-              <div className="flex items-center gap-3 text-xs text-[#8E8E93]">
+              <div className="flex items-center gap-3 text-xs text-[#8E8E93] pl-5 sm:pl-0">
                 <span>{distTypeLabel[d.type] ?? d.type}</span>
                 <span>{d.distanceMiles} mi</span>
                 <span className="font-medium text-[#1C1C1E]">{d.percentageOfSales}%</span>
@@ -122,12 +122,12 @@ export default async function FarmScorecardPage({ params }: Props) {
       </div>
 
       {/* Interest CTA */}
-      <div className="surface-elevated rounded-[16px] p-5 flex items-center justify-between gap-4">
+      <div className="surface-elevated rounded-[16px] p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <p className="text-sm font-semibold text-[#1C1C1E]">Interested in working together?</p>
           <p className="text-xs text-[#8E8E93] mt-0.5">Express interest and our team will facilitate an introduction.</p>
         </div>
-        <Button size="sm" variant="blue">
+        <Button size="sm" variant="blue" className="self-start sm:self-auto shrink-0">
           <Handshake className="h-3.5 w-3.5" /> Express Interest
         </Button>
       </div>

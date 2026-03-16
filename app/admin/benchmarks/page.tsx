@@ -14,20 +14,20 @@ export default async function BenchmarksPage() {
 
   return (
     <div className="space-y-6 animate-fade-up">
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-[#1C1C1E]">Regional Benchmarks</h1>
           <p className="text-sm text-[#8E8E93] mt-1">
             Baseline values for Affordability and Local Accessibility scoring. Used to keep scores fair across pilot regions.
           </p>
         </div>
-        <Button size="sm">
+        <Button size="sm" className="self-start shrink-0">
           <Plus className="h-3.5 w-3.5" /> Add benchmark
         </Button>
       </div>
 
-      <div className="surface-elevated rounded-[20px] overflow-hidden">
-        <table className="w-full text-sm">
+      <div className="surface-elevated rounded-[20px] overflow-x-auto">
+        <table className="w-full text-sm min-w-[600px]">
           <thead>
             <tr className="border-b border-[rgba(0,0,0,0.06)]">
               {['Region', 'Category', 'Metric', 'Baseline', 'Good ≥', 'Effective from', ''].map((h) => (

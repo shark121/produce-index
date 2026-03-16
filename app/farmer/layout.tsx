@@ -20,8 +20,8 @@ export default async function FarmerLayout({ children }: { children: React.React
   return (
     <div className="flex min-h-screen">
       <FarmerSidebar userName={userName} />
-      <main className="flex-1 ml-60 min-h-screen">
-        <div className="max-w-5xl mx-auto px-8 py-8">{children}</div>
+      <main className="flex-1 md:ml-60 min-h-screen">
+        <div className="max-w-5xl mx-auto px-4 md:px-8 pt-[calc(3.5rem+1.5rem)] md:pt-8 pb-24 md:pb-8">{children}</div>
       </main>
     </div>
   )

@@ -28,9 +28,9 @@ export default async function ReviewSubmissionPage({ params }: Props) {
     <div className="space-y-6 animate-fade-up">
       {/* Header */}
       <div className="surface-elevated rounded-[20px] p-6">
-        <div className="flex items-start justify-between mb-3">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-3">
           <div>
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex flex-wrap items-center gap-2 mb-1">
               <h1 className="text-2xl font-bold text-[#1C1C1E]">{farm.name}</h1>
               <SubmissionStatusBadge status={submission.status} />
             </div>
@@ -38,7 +38,7 @@ export default async function ReviewSubmissionPage({ params }: Props) {
               <MapPin className="h-3.5 w-3.5" /> {farm.city}, {farm.state} · {farm.region}
             </p>
           </div>
-          <div className="text-right text-xs text-[#8E8E93]">
+          <div className="text-xs text-[#8E8E93] sm:text-right">
             <p>Submitted {formatDateTime(submission.submittedAt!)}</p>
             <p>ID: {id}</p>
           </div>

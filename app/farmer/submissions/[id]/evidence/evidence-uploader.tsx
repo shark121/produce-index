@@ -100,7 +100,7 @@ export function EvidenceUploader({ submissionId }: Props) {
 
       {/* Drop zone */}
       <div
-        className="surface-elevated rounded-[16px] border-2 border-dashed border-[rgba(0,0,0,0.10)] p-10 text-center cursor-pointer hover:border-[#34C759] transition-colors"
+        className="surface-elevated rounded-[16px] border-2 border-dashed border-[rgba(0,0,0,0.10)] p-6 md:p-10 text-center cursor-pointer hover:border-[#34C759] transition-colors"
         onClick={() => inputRef.current?.click()}
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => {

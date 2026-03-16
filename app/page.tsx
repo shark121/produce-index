@@ -9,7 +9,7 @@ export default function HomePage() {
       <PublicNav />
       <main>
         {/* Hero */}
-        <section className="mx-auto max-w-6xl px-6 pt-24 pb-20 text-center">
+        <section className="mx-auto max-w-6xl px-4 md:px-6 pt-14 md:pt-24 pb-14 md:pb-20 text-center">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[rgba(52,199,89,0.12)] text-[#1A7A32] text-sm font-medium mb-8">
             <Leaf className="h-3.5 w-3.5" />
             Pilot Program Open
@@ -35,7 +35,7 @@ export default function HomePage() {
         </section>
 
         {/* Score categories */}
-        <section className="mx-auto max-w-6xl px-6 pb-20">
+        <section className="mx-auto max-w-6xl px-4 md:px-6 pb-14 md:pb-20">
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
             {[
               { label: 'Nutritional Value',  weight: '30%', color: '#34C759' },
@@ -54,7 +54,7 @@ export default function HomePage() {
         </section>
 
         {/* Value props */}
-        <section className="mx-auto max-w-6xl px-6 pb-24">
+        <section className="mx-auto max-w-6xl px-4 md:px-6 pb-16 md:pb-24">
           <div className="grid md:grid-cols-3 gap-6">
             {[
               {

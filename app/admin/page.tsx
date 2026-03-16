@@ -46,18 +46,18 @@ export default async function AdminQueuePage() {
             <Link
               key={item.id}
               href={`/admin/queue/${item.id}`}
-              className="surface-elevated rounded-[12px] px-5 py-4 flex items-center justify-between group hover:border-[rgba(0,122,255,0.30)] transition-colors"
+              className="surface-elevated rounded-[12px] px-4 sm:px-5 py-4 flex items-center justify-between group hover:border-[rgba(0,122,255,0.30)] transition-colors"
             >
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3 min-w-0">
                 <SubmissionStatusBadge status={item.status} />
-                <div>
-                  <p className="text-sm font-semibold text-[#1C1C1E]">{item.farmName}</p>
-                  <p className="text-xs text-[#8E8E93]">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-[#1C1C1E] truncate">{item.farmName}</p>
+                  <p className="text-xs text-[#8E8E93] truncate">
                     Submitted {formatDateTime(item.submittedAt!)}
                   </p>
                 </div>
               </div>
-              <span className="text-xs text-[#C7C7CC] group-hover:text-[#007AFF] transition-colors">Review →</span>
+              <span className="text-xs text-[#C7C7CC] group-hover:text-[#007AFF] transition-colors shrink-0 ml-2">Review →</span>
             </Link>
           ))}
         </div>

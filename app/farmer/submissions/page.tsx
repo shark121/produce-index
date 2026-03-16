@@ -17,14 +17,14 @@ export default async function SubmissionsPage() {
 
   return (
     <div className="space-y-6 animate-fade-up">
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-[#1C1C1E]">Submissions</h1>
           <p className="text-sm text-[#8E8E93] mt-1">
             Each submission is a snapshot of your farm data reviewed for scoring.
           </p>
         </div>
-        <Button size="sm" asChild>
+        <Button size="sm" className="self-start shrink-0" asChild>
           <Link href="/farmer/submissions/new">
             <Plus className="h-3.5 w-3.5" /> New submission
           </Link>

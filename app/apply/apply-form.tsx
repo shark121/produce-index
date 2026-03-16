@@ -34,7 +34,7 @@ export function ApplyForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="surface-elevated rounded-[20px] p-8 space-y-5">
+    <form onSubmit={handleSubmit} className="surface-elevated rounded-[20px] p-5 md:p-8 space-y-5">
       {/* Role selector */}
       <div>
         <p className="text-sm font-medium text-[#1C1C1E] mb-2">I am applying as a</p>

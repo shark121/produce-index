@@ -79,7 +79,7 @@ export default async function AnalyticsPage() {
         <div className="space-y-3">
           {funnel.map(({ status, count }) => (
             <div key={status} className="flex items-center gap-3">
-              <span className="text-sm text-[#48484A] w-32 shrink-0">{status}</span>
+              <span className="text-sm text-[#48484A] w-24 sm:w-32 shrink-0">{status}</span>
               <div className="flex-1 h-2 rounded-full bg-[rgba(0,0,0,0.06)]">
                 <div
                   className="h-full rounded-full bg-[#34C759] transition-all"

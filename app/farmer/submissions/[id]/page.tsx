@@ -30,9 +30,9 @@ export default async function SubmissionDetailPage({ params }: Props) {
 
   return (
     <div className="space-y-6 animate-fade-up">
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
         <div>
-          <div className="flex items-center gap-3 mb-1">
+          <div className="flex flex-wrap items-center gap-2 mb-1">
             <h1 className="text-2xl font-bold text-[#1C1C1E]">Submission</h1>
             <SubmissionStatusBadge status={submission.status} />
           </div>
@@ -41,7 +41,7 @@ export default async function SubmissionDetailPage({ params }: Props) {
           </p>
         </div>
         {submission.status === 'draft' && (
-          <Button variant="secondary" size="sm" asChild>
+          <Button variant="secondary" size="sm" className="self-start shrink-0" asChild>
             <Link href={`/farmer/submissions/${id}/evidence`}>
               <Upload className="h-3.5 w-3.5" /> Manage evidence
             </Link>
@@ -99,12 +99,12 @@ export default async function SubmissionDetailPage({ params }: Props) {
 
       {/* Submit */}
       {submission.status === 'draft' && (
-        <div className="surface-elevated rounded-[16px] p-5 flex items-center justify-between">
+        <div className="surface-elevated rounded-[16px] p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <p className="text-sm font-medium text-[#1C1C1E]">Ready to submit?</p>
             <p className="text-xs text-[#8E8E93] mt-0.5">Once submitted, moves to admin review queue.</p>
           </div>
-          <Button size="sm">Submit for Review</Button>
+          <Button size="sm" className="self-start sm:self-auto shrink-0">Submit for Review</Button>
         </div>
       )}
     </div>
