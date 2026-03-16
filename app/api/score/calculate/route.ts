@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { calculateOverallScore, DEFAULT_WEIGHTS } from '@/lib/types'
+import { getCurrentScoringConfig } from '@/lib/scoring-config'
 
 /**
  * POST /api/score/calculate
@@ -66,9 +67,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ data: null, error: { message: 'Submission not found' } }, { status: 404 })
   }
 
-  // Fetch current weights version
-  const weights = DEFAULT_WEIGHTS  // TODO: fetch from admin_config table
-  const overallScore = calculateOverallScore(subscores, weights)
+  const config = await getCurrentScoringConfig(supabase)
+  const overallScore = calculateOverallScore(subscores, config.weights ?? DEFAULT_WEIGHTS)
+  const normalizedCompleteness = Math.min(1, Math.max(0, Number(dataCompleteness) || 0))
 
   const snapshot = {
     submission_id: submissionId,
@@ -79,10 +80,10 @@ export async function POST(request: Request) {
     local_accessibility: subscores.localAccessibility,
     affordability: subscores.affordability,
     overall_score: Math.round(overallScore * 10) / 10,
-    data_completeness: dataCompleteness,
+    data_completeness: normalizedCompleteness,
     verification_status: verificationStatus,
-    weights_version: weights.version,
-    benchmark_version: 'v1',  // TODO: fetch from regional_benchmarks
+    weights_version: config.weights.version,
+    benchmark_version: config.benchmarkVersion,
     calculated_at: new Date().toISOString(),
     calculated_by: user.id,
   }
@@ -102,7 +103,7 @@ export async function POST(request: Request) {
     farm_id: submission.farm_id,
     triggered_by: user.id,
     input_hash: Buffer.from(JSON.stringify(subscores)).toString('base64'),
-    weights_version: weights.version,
+    weights_version: config.weights.version,
     created_at: new Date().toISOString(),
   })
 

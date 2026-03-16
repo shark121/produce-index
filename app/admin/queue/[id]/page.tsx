@@ -4,7 +4,9 @@ import { SubmissionStatusBadge } from '@/components/ui/status-badge'
 import { Badge } from '@/components/ui/badge'
 import { formatDateTime } from '@/lib/utils'
 import { ReviewPanel } from './review-panel'
-import { MOCK_SUBMISSIONS, getFarmById, getCropsForFarm } from '@/lib/mock'
+import { getCropsForFarm, getFarmById, getSubmissionById } from '@/lib/mock'
+import { createClient } from '@/lib/supabase/server'
+import { getAutoScoringContext, rerunAutoScoring } from '@/lib/submission-scoring-store'
 import { MapPin, Sprout } from 'lucide-react'
 
 import { isMockMode } from '@/lib/is-mock-mode'
@@ -18,9 +20,24 @@ interface Props { params: Promise<{ id: string }> }
 export default async function ReviewSubmissionPage({ params }: Props) {
   const { id } = await params
 
-  const submission = MOCK_MODE ? MOCK_SUBMISSIONS.find(s => s.id === id) ?? null : null
+  const submission = MOCK_MODE ? getSubmissionById(id) : null
   const farm = MOCK_MODE && submission ? getFarmById(submission.farmId) : null
   const crops = MOCK_MODE && submission ? getCropsForFarm(submission.farmId) : []
+  let reviewData = MOCK_MODE ? await getAutoScoringContext(id) : null
+
+  if (!reviewData) {
+    if (MOCK_MODE) {
+      await rerunAutoScoring(id)
+      reviewData = await getAutoScoringContext(id)
+    } else {
+      const supabase = await createClient()
+      reviewData = await getAutoScoringContext(id, supabase as never)
+      if (!reviewData?.run) {
+        await rerunAutoScoring(id, supabase as never)
+        reviewData = await getAutoScoringContext(id, supabase as never)
+      }
+    }
+  }
 
   if (!submission || !farm) notFound()
 
@@ -53,7 +70,12 @@ export default async function ReviewSubmissionPage({ params }: Props) {
         </div>
       </div>
 
-      <ReviewPanel submissionId={id} />
+      <ReviewPanel
+        submissionId={id}
+        initialRun={reviewData?.run ?? null}
+        initialAssets={reviewData?.evidenceAssets ?? []}
+        initialExtractions={reviewData?.evidenceExtractions ?? []}
+      />
     </div>
   )
 }

@@ -34,10 +34,15 @@ export async function updateSession(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
-  const publicPaths = ['/', '/how-it-works', '/for-farmers', '/for-partners', '/apply']
+  const publicPaths = ['/', '/how-it-works', '/for-farmers', '/for-partners', '/for-institutions', '/apply']
   const authPaths = ['/auth/login', '/auth/register', '/auth/callback']
 
-  if (publicPaths.some((p) => pathname === p) || authPaths.some((p) => pathname.startsWith(p))) {
+  if (
+    publicPaths.some((p) => pathname === p) ||
+    pathname === '/marketplace' ||
+    pathname.startsWith('/marketplace/') ||
+    authPaths.some((p) => pathname.startsWith(p))
+  ) {
     return supabaseResponse
   }
 

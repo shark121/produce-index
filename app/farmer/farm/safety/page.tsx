@@ -1,29 +1,37 @@
 import type { Metadata } from 'next'
-import { Plus } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { ModeNotice } from '@/components/ui/mode-notice'
+import { normalizeSafetyRow } from '@/lib/farm-section-data'
+import { isMockMode } from '@/lib/is-mock-mode'
+import { getSafetyPracticesForFarm } from '@/lib/mock'
+import { createClient } from '@/lib/supabase/server'
+import { SafetyManager } from './safety-manager'
 
 export const metadata: Metadata = { title: 'Safety Practices' }
 
-export default function SafetyPage() {
+export default async function SafetyPage() {
+  let initialPractices = getSafetyPracticesForFarm('farm-1')
+
+  if (!isMockMode()) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user?.id) {
+      const { data: farm } = await supabase.from('farm_profiles').select('id').eq('user_id', user.id).single()
+      if (farm?.id) {
+        const { data } = await supabase.from('safety_practices').select('*').eq('farm_id', farm.id).order('category')
+        initialPractices = (data ?? []).map((row) => normalizeSafetyRow(row))
+      }
+    }
+  }
+
   return (
     <div className="space-y-6 animate-fade-up">
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-[#1C1C1E]">Safety Practices</h1>
-          <p className="text-sm text-[#8E8E93] mt-1">
-            Pesticide use, water handling, and certifications feed into your Food Safety subscore.
-            Documentation is required for verification.
-          </p>
-        </div>
-        <Button size="sm">
-          <Plus className="h-3.5 w-3.5" /> Add practice
-        </Button>
-      </div>
-
-      {/* TODO: SafetyPracticeList + SafetyPracticeForm components (Sprint 2) */}
-      <div className="surface-elevated rounded-[16px] p-10 text-center">
-        <p className="text-sm text-[#8E8E93]">No safety practices recorded yet.</p>
-      </div>
+      {isMockMode() && (
+        <ModeNotice
+          title="Safety practices are persisting locally in demo mode."
+          body="Documentation flags and certification timing flow into the food-safety recommendation before admin verification."
+        />
+      )}
+      <SafetyManager initialPractices={initialPractices} />
     </div>
   )
 }

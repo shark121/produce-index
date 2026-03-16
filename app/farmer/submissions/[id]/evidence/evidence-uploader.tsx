@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { Button } from '@/components/ui/button'
 import { formatFileSize } from '@/lib/utils'
 import type { EvidenceCategory } from '@/lib/types'
 import { Upload, X, FileText, CheckCircle2 } from 'lucide-react'

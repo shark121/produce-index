@@ -1,136 +1,232 @@
 import type { Metadata } from 'next'
+import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ScoreRing } from '@/components/ui/score-ring'
+import { ArrowRight, MapPin, Sprout, Truck } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
-import { VerificationStatusBadge } from '@/components/ui/status-badge'
 import { Button } from '@/components/ui/button'
-import { MapPin, Sprout, Handshake, Truck } from 'lucide-react'
-import { getFarmById, getScoreForFarm, getCropsForFarm, getDistributionForFarm } from '@/lib/mock'
-
+import { ExpressInterestCard } from '@/components/partner/express-interest-card'
+import { ModeNotice } from '@/components/ui/mode-notice'
+import { ScoreRing } from '@/components/ui/score-ring'
 import { isMockMode } from '@/lib/is-mock-mode'
-const MOCK_MODE = isMockMode()
+import { getFarmScorecardById } from '@/lib/scorecards'
+import { formatDate } from '@/lib/utils'
 
 export const metadata: Metadata = { title: 'Farm Scorecard' }
 
-interface Props { params: Promise<{ id: string }> }
+interface Props {
+  params: Promise<{ id: string }>
+}
 
 const CATEGORIES = [
-  { key: 'nutritionalValue' as const,   label: 'Nutritional Value',   weight: 30, color: '#34C759' },
-  { key: 'foodSafety' as const,         label: 'Food Safety',         weight: 20, color: '#007AFF' },
-  { key: 'supplyReliability' as const,  label: 'Supply Reliability',  weight: 20, color: '#AF52DE' },
-  { key: 'localAccessibility' as const, label: 'Local Accessibility', weight: 15, color: '#FF9500' },
-  { key: 'affordability' as const,      label: 'Affordability',       weight: 15, color: '#FF3B30' },
+  { key: 'nutritionalValue' as const, label: 'Nutritional Value', color: '#34C759' },
+  { key: 'foodSafety' as const, label: 'Food Safety', color: '#007AFF' },
+  { key: 'supplyReliability' as const, label: 'Supply Reliability', color: '#AF52DE' },
+  { key: 'localAccessibility' as const, label: 'Local Accessibility', color: '#FF9500' },
+  { key: 'affordability' as const, label: 'Affordability', color: '#FF3B30' },
 ]
 
-
-const distTypeLabel: Record<string, string> = {
-  farmers_market: 'Farmers Market', grocery: 'Grocery', food_bank: 'Food Bank',
-  restaurant: 'Restaurant', csa: 'CSA', wholesale: 'Wholesale', direct_consumer: 'Direct',
+const distributionLabel: Record<string, string> = {
+  farmers_market: 'Farmers market',
+  grocery: 'Grocery',
+  food_bank: 'Food bank',
+  restaurant: 'Restaurant',
+  csa: 'CSA',
+  wholesale: 'Wholesale',
+  direct_consumer: 'Direct',
 }
 
 export default async function FarmScorecardPage({ params }: Props) {
   const { id } = await params
+  const scorecard = isMockMode() ? getFarmScorecardById(id) : null
 
-  const farm = MOCK_MODE ? getFarmById(id) : null
-  const score = MOCK_MODE ? getScoreForFarm(id) : null
-  const crops = MOCK_MODE ? getCropsForFarm(id) : []
-  const distribution = MOCK_MODE ? getDistributionForFarm(id) : []
-
-  if (!farm || !score) notFound()
+  if (!scorecard) notFound()
 
   return (
     <div className="space-y-6 animate-fade-up">
-      {/* Header */}
-      <div className="surface-elevated rounded-[24px] p-6 flex items-start justify-between gap-6 flex-wrap">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1 flex-wrap">
-            <h1 className="text-2xl font-bold text-[#1C1C1E]">{farm.name}</h1>
-            <VerificationStatusBadge status={score.verificationStatus} />
-          </div>
-          <p className="flex items-center gap-1 text-sm text-[#8E8E93]">
-            <MapPin className="h-3.5 w-3.5 shrink-0" /> {farm.city}, {farm.state} · {farm.region}
-          </p>
-          <p className="mt-3 text-sm text-[#48484A] leading-relaxed max-w-xl">{farm.description}</p>
-          <div className="mt-3 flex items-center gap-4 text-xs text-[#8E8E93]">
-            <span>{farm.acreageTilled} acres tilled</span>
-            <span>{farm.yearsInOperation} years in operation</span>
-          </div>
-        </div>
-        <ScoreRing score={score.overallScore} size="lg" />
-      </div>
+      {isMockMode() && (
+        <ModeNotice
+          title="This institution packet is rendered from explicit demo pilot records."
+          body="The confidence, benchmark, and health-impact sections are live so stakeholders can review the complete decision flow even before production data is connected."
+        />
+      )}
 
-      {/* Score breakdown */}
-      <div>
-        <h2 className="text-base font-semibold text-[#1C1C1E] mb-3">Score breakdown</h2>
-        <div className="grid md:grid-cols-2 gap-3">
-          {CATEGORIES.map(({ key, label, weight, color }) => {
-            const sub = score[key]
-            return (
-              <div key={key} className="surface-elevated rounded-[12px] p-4">
-                <div className="flex justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <div className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
-                    <span className="text-sm font-medium text-[#1C1C1E]">{label}</span>
-                  </div>
-                  <span className="text-sm font-bold text-[#1C1C1E]">{sub.toFixed(1)}</span>
-                </div>
-                <div className="h-1.5 w-full rounded-full bg-[rgba(0,0,0,0.06)]">
-                  <div className="h-full rounded-full" style={{ width: `${sub}%`, backgroundColor: color }} />
-                </div>
-                <p className="text-xs text-[#8E8E93] mt-1">{weight}% of score</p>
-              </div>
-            )
-          })}
-        </div>
-      </div>
-
-      {/* Crops */}
-      <div className="surface-elevated rounded-[16px] p-5">
-        <h2 className="text-sm font-semibold text-[#1C1C1E] mb-3">Crops grown</h2>
-        <div className="flex flex-wrap gap-2">
-          {crops.map((c) => (
-            <Badge key={c.id} variant="green">
-              <Sprout className="h-2.5 w-2.5" />
-              {c.name}
-              {c.certifications.length > 0 && (
-                <span className="opacity-70"> · {c.certifications[0]}</span>
-              )}
-            </Badge>
-          ))}
-        </div>
-      </div>
-
-      {/* Distribution */}
-      <div className="surface-elevated rounded-[16px] p-5">
-        <h2 className="text-sm font-semibold text-[#1C1C1E] mb-3">Distribution channels</h2>
-        <div className="space-y-2">
-          {distribution.map((d) => (
-            <div key={d.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-2 border-b border-[rgba(0,0,0,0.05)] last:border-0 gap-1">
-              <div className="flex items-center gap-2 flex-wrap">
-                <Truck className="h-3.5 w-3.5 text-[#8E8E93] shrink-0" />
-                <span className="text-sm text-[#1C1C1E]">{d.name}</span>
-                {d.servesLowIncomeArea && <Badge variant="blue">Low-income area</Badge>}
-              </div>
-              <div className="flex items-center gap-3 text-xs text-[#8E8E93] pl-5 sm:pl-0">
-                <span>{distTypeLabel[d.type] ?? d.type}</span>
-                <span>{d.distanceMiles} mi</span>
-                <span className="font-medium text-[#1C1C1E]">{d.percentageOfSales}%</span>
-              </div>
+      <div className="surface-elevated rounded-[24px] p-6 md:p-7">
+        <div className="flex items-start justify-between gap-6 flex-wrap">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
+              <h1 className="text-2xl font-bold text-[#1C1C1E]">{scorecard.farm.name}</h1>
+              <Badge variant="green">{scorecard.financingReadiness.label}</Badge>
+              <Badge variant="blue">
+                Confidence {scorecard.verificationConfidence.score}/100
+              </Badge>
             </div>
-          ))}
+            <p className="flex items-center gap-1 text-sm text-[#8E8E93]">
+              <MapPin className="h-3.5 w-3.5 shrink-0" />
+              {scorecard.farm.city}, {scorecard.farm.state} · {scorecard.farm.region}
+            </p>
+            <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[#48484A]">
+              {scorecard.farm.description}
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Badge variant="orange">
+                Evidence {scorecard.verificationConfidence.evidenceCoveragePct}%
+              </Badge>
+              <Badge>
+                Benchmark {scorecard.scoreProvenance.benchmarkVersion}
+              </Badge>
+              <Badge variant="purple">
+                Next season {scorecard.financingReadiness.nextSeasonConfidence}
+              </Badge>
+            </div>
+          </div>
+          <ScoreRing score={scorecard.score.overallScore} size="lg" />
         </div>
       </div>
 
-      {/* Interest CTA */}
-      <div className="surface-elevated rounded-[16px] p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <p className="text-sm font-semibold text-[#1C1C1E]">Interested in working together?</p>
-          <p className="text-xs text-[#8E8E93] mt-0.5">Express interest and our team will facilitate an introduction.</p>
+      <div className="grid gap-4 md:grid-cols-3">
+        <div className="surface-elevated rounded-[18px] p-5">
+          <p className="text-xs uppercase tracking-[0.16em] text-[#8E8E93]">Financing readiness</p>
+          <p className="mt-2 text-lg font-semibold text-[#1C1C1E]">{scorecard.financingReadiness.label}</p>
+          <p className="mt-2 text-sm leading-relaxed text-[#48484A]">{scorecard.financingReadiness.lenderSummary}</p>
         </div>
-        <Button size="sm" variant="blue" className="self-start sm:self-auto shrink-0">
-          <Handshake className="h-3.5 w-3.5" /> Express Interest
-        </Button>
+        <div className="surface-elevated rounded-[18px] p-5">
+          <p className="text-xs uppercase tracking-[0.16em] text-[#8E8E93]">Health impact ledger</p>
+          <p className="mt-2 text-lg font-semibold text-[#1C1C1E]">
+            {scorecard.healthImpactSummary.estimatedHealthyServings.toLocaleString()}
+          </p>
+          <p className="mt-2 text-sm leading-relaxed text-[#48484A]">estimated healthy servings annually</p>
+        </div>
+        <div className="surface-elevated rounded-[18px] p-5">
+          <p className="text-xs uppercase tracking-[0.16em] text-[#8E8E93]">Verification confidence</p>
+          <p className="mt-2 text-lg font-semibold text-[#1C1C1E]">{scorecard.verificationConfidence.label}</p>
+          <p className="mt-2 text-sm leading-relaxed text-[#48484A]">
+            {scorecard.verificationConfidence.auditedAssets} audited evidence checkpoints reviewed on{' '}
+            {formatDate(scorecard.verificationConfidence.lastReviewedAt)}.
+          </p>
+        </div>
       </div>
+
+      <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+        <div className="surface-elevated rounded-[20px] p-5">
+          <h2 className="text-base font-semibold text-[#1C1C1E] mb-4">Score breakdown</h2>
+          <div className="space-y-4">
+            {CATEGORIES.map(({ key, label, color }) => {
+              const value = scorecard.score[key]
+              return (
+                <div key={key}>
+                  <div className="mb-1.5 flex items-center justify-between text-sm">
+                    <span className="font-medium text-[#1C1C1E]">{label}</span>
+                    <span className="font-semibold text-[#1C1C1E]">{value.toFixed(1)}</span>
+                  </div>
+                  <div className="h-2 w-full rounded-full bg-[rgba(0,0,0,0.06)]">
+                    <div className="h-full rounded-full" style={{ width: `${value}%`, backgroundColor: color }} />
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        <div className="surface-elevated rounded-[20px] p-5">
+          <h2 className="text-base font-semibold text-[#1C1C1E] mb-4">Score provenance</h2>
+          <div className="space-y-3 text-sm text-[#48484A]">
+            <div className="rounded-[14px] bg-[rgba(0,0,0,0.03)] p-4">
+              <p className="text-xs uppercase tracking-[0.14em] text-[#8E8E93]">Review method</p>
+              <p className="mt-1 font-medium text-[#1C1C1E]">{scorecard.scoreProvenance.reviewMethod}</p>
+            </div>
+            <div className="rounded-[14px] bg-[rgba(0,0,0,0.03)] p-4">
+              <p className="text-xs uppercase tracking-[0.14em] text-[#8E8E93]">Versioning</p>
+              <p className="mt-1 font-medium text-[#1C1C1E]">
+                {scorecard.scoreProvenance.weightsVersion} · {scorecard.scoreProvenance.benchmarkVersion}
+              </p>
+            </div>
+            <div className="rounded-[14px] bg-[rgba(0,0,0,0.03)] p-4">
+              <p className="text-xs uppercase tracking-[0.14em] text-[#8E8E93]">Benchmark region</p>
+              <p className="mt-1 font-medium text-[#1C1C1E]">{scorecard.scoreProvenance.benchmarkRegion}</p>
+              <p className="mt-1">{scorecard.financingReadiness.benchmarkDelta}</p>
+            </div>
+            <p className="text-xs text-[#8E8E93]">
+              Reviewed {formatDate(scorecard.scoreProvenance.reviewedAt)} · Evidence coverage {scorecard.scoreProvenance.evidenceCoveragePct}%
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
+        <div className="surface-elevated rounded-[20px] p-5">
+          <h2 className="text-base font-semibold text-[#1C1C1E] mb-4">Community coverage map</h2>
+          <div className="grid grid-cols-3 gap-3">
+            <div className="rounded-[16px] bg-[rgba(52,199,89,0.08)] p-4">
+              <p className="text-xs uppercase tracking-[0.14em] text-[#8E8E93]">Local share</p>
+              <p className="mt-2 text-2xl font-semibold text-[#1C1C1E]">{scorecard.healthImpactSummary.localDistributionPct}%</p>
+            </div>
+            <div className="rounded-[16px] bg-[rgba(255,149,0,0.08)] p-4">
+              <p className="text-xs uppercase tracking-[0.14em] text-[#8E8E93]">Low-income reach</p>
+              <p className="mt-2 text-2xl font-semibold text-[#1C1C1E]">{scorecard.healthImpactSummary.lowIncomeReachPct}%</p>
+            </div>
+            <div className="rounded-[16px] bg-[rgba(0,122,255,0.08)] p-4">
+              <p className="text-xs uppercase tracking-[0.14em] text-[#8E8E93]">Access points</p>
+              <p className="mt-2 text-2xl font-semibold text-[#1C1C1E]">{scorecard.healthImpactSummary.nearbyAccessPoints}</p>
+            </div>
+          </div>
+          <p className="mt-4 text-sm leading-relaxed text-[#48484A]">
+            {scorecard.healthImpactSummary.narrative}
+          </p>
+        </div>
+
+        <div className="surface-elevated rounded-[20px] p-5">
+          <h2 className="text-base font-semibold text-[#1C1C1E] mb-4">Crops and distribution channels</h2>
+          <div className="flex flex-wrap gap-2 mb-5">
+            {scorecard.crops.map((crop) => (
+              <Badge key={crop.id} variant="green">
+                <Sprout className="h-2.5 w-2.5" />
+                {crop.name}
+              </Badge>
+            ))}
+          </div>
+          <div className="space-y-2">
+            {scorecard.distributionChannels.map((channel) => (
+              <div
+                key={channel.id}
+                className="flex flex-col gap-1 rounded-[14px] border border-[rgba(0,0,0,0.05)] px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Truck className="h-3.5 w-3.5 text-[#8E8E93]" />
+                  <span className="text-sm text-[#1C1C1E]">{channel.name}</span>
+                  {channel.servesLowIncomeArea && <Badge variant="blue">Low-income area</Badge>}
+                </div>
+                <div className="flex items-center gap-3 pl-5 sm:pl-0 text-xs text-[#8E8E93]">
+                  <span>{distributionLabel[channel.type] ?? channel.type}</span>
+                  <span>{channel.distanceMiles} mi</span>
+                  <span className="font-medium text-[#1C1C1E]">{channel.percentageOfSales}%</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="surface-elevated rounded-[20px] p-5 flex items-center justify-between gap-4 flex-wrap">
+        <div>
+          <p className="text-sm font-semibold text-[#1C1C1E]">Next actions</p>
+          <p className="text-sm text-[#48484A] mt-1">Use compare for shortlist decisions and capture intent directly from this verified packet.</p>
+        </div>
+        <div className="flex gap-2 flex-wrap">
+          <Button variant="secondary" asChild>
+            <Link href={`/partner?compare=${scorecard.farm.id}`}>Add to compare set</Link>
+          </Button>
+          <Button variant="secondary" asChild>
+            <Link href={`/marketplace/farms/${scorecard.farm.id}`}>Open exchange storefront</Link>
+          </Button>
+          <Button asChild>
+            <Link href="/partner/reports">
+              Export roadmap <ArrowRight className="h-4 w-4" />
+            </Link>
+          </Button>
+        </div>
+      </div>
+
+      <ExpressInterestCard farmId={scorecard.farm.id} farmName={scorecard.farm.name} />
     </div>
   )
 }

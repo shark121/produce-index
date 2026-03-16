@@ -2,24 +2,26 @@
 
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import type { ScoringWeights } from '@/lib/types'
+import type { ScoringConfig } from '@/lib/types'
+import { formatDateTime } from '@/lib/utils'
 
-const LABELS: Record<keyof Omit<ScoringWeights, 'version'>, string> = {
+const LABELS: Record<keyof ScoringConfig['weights'], string> = {
   nutritionalValue:   'Nutritional Value',
   foodSafety:         'Food Safety',
   supplyReliability:  'Supply Reliability',
   localAccessibility: 'Local Accessibility',
   affordability:      'Affordability',
+  version:            'Version',
 }
 
 interface Props {
-  weights: ScoringWeights
+  config: ScoringConfig
 }
 
-export function ScoringConfigForm({ weights }: Props) {
-  const keys = Object.keys(LABELS) as (keyof typeof LABELS)[]
+export function ScoringConfigForm({ config }: Props) {
+  const keys = (Object.keys(LABELS) as (keyof typeof LABELS)[]).filter((key) => key !== 'version')
   const [values, setValues] = useState(
-    Object.fromEntries(keys.map((k) => [k, Math.round(weights[k] * 100)])),
+    Object.fromEntries(keys.map((key) => [key, Math.round(config.weights[key] * 100)])),
   )
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -42,8 +44,22 @@ export function ScoringConfigForm({ weights }: Props) {
   return (
     <div className="space-y-5">
       <div className="surface-elevated rounded-[20px] p-6">
-        <p className="text-sm font-medium text-[#1C1C1E] mb-4">
-          Current version: <span className="text-[#34C759]">{weights.version}</span>
+        <div className="grid gap-3 md:grid-cols-3 mb-5">
+          <div className="rounded-[12px] bg-[rgba(52,199,89,0.10)] px-4 py-3">
+            <p className="text-xs uppercase tracking-[0.16em] text-[#8E8E93]">Weights version</p>
+            <p className="mt-1 text-sm font-semibold text-[#1C1C1E]">{config.weights.version}</p>
+          </div>
+          <div className="rounded-[12px] bg-[rgba(0,122,255,0.08)] px-4 py-3">
+            <p className="text-xs uppercase tracking-[0.16em] text-[#8E8E93]">Benchmark version</p>
+            <p className="mt-1 text-sm font-semibold text-[#1C1C1E]">{config.benchmarkVersion}</p>
+          </div>
+          <div className="rounded-[12px] bg-[rgba(0,0,0,0.04)] px-4 py-3">
+            <p className="text-xs uppercase tracking-[0.16em] text-[#8E8E93]">Last updated</p>
+            <p className="mt-1 text-sm font-semibold text-[#1C1C1E]">{formatDateTime(config.updatedAt)}</p>
+          </div>
+        </div>
+        <p className="text-sm text-[#48484A] mb-4">
+          {config.reviewMethod}. Benchmark source: {config.benchmarkSource}.
         </p>
         <div className="space-y-4">
           {keys.map((key) => (
@@ -82,7 +98,7 @@ export function ScoringConfigForm({ weights }: Props) {
       </Button>
 
       <p className="text-xs text-[#C7C7CC]">
-        Saving creates a new weights version. Past score snapshots remain unchanged.
+        Saving creates a new scoring configuration version. Past score snapshots remain unchanged.
       </p>
     </div>
   )

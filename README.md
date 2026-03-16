@@ -1,36 +1,67 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Produce Reliability Index
 
-## Getting Started
+PRI is a Next.js product demo for turning farm evidence into institution-ready scorecards. The
+current product story is centered on lenders and health systems, with farmers as the supply-side
+motion and produce buyers as a secondary audience.
 
-First, run the development server:
+## What is implemented
+
+- Institution-first public marketing flow:
+  - `/`
+  - `/for-institutions`
+  - `/for-farmers`
+  - `/for-partners`
+  - `/how-it-works`
+- Real pilot intake flow:
+  - `/apply`
+  - `POST /api/applications`
+- Institution-facing partner tooling:
+  - `/partner`
+  - `/partner/compare`
+  - `/partner/farms/[id]`
+  - `/partner/reports`
+- Scoring provenance improvements:
+  - evidence coverage is captured in admin review
+  - scorecards expose weights version, benchmark version, review method, and confidence
+
+## Demo mode
+
+The app is designed to run safely before Supabase is configured.
+
+- If `NEXT_PUBLIC_MOCK_MODE=true`, or Supabase env vars are missing, demo mode is active.
+- Demo mode uses curated mock farms, scores, and partner records.
+- Pilot applications are persisted locally to `.local/pilot-applications.json`.
+- Public and partner pages explicitly show when they are using demo data.
+
+## Local development
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Key environment variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+NEXT_PUBLIC_MOCK_MODE=
+```
 
-## Learn More
+If Supabase is configured, the app will attempt to use:
 
-To learn more about Next.js, take a look at the following resources:
+- `pilot_intake_applications`
+- `pri_submissions`
+- `pri_score_snapshots`
+- `partner_interests`
+- `admin_config`
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Current product posture
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Primary buyer: lenders and health systems
+- Secondary buyer: produce buyers and procurement teams
+- Farmer value: verified proof record for financing and procurement conversations
+- Differentiators in the UI: financing readiness, community coverage, health impact ledger,
+  verification confidence, and seasonal reliability

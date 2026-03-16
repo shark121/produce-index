@@ -1,7 +1,13 @@
 import { NextResponse } from 'next/server'
+import { isMockMode } from '@/lib/is-mock-mode'
+import { MOCK_USERS, getPartnerInterestsForPartner, getVerifiedFarms, upsertMockRecord } from '@/lib/mock'
 import { createClient } from '@/lib/supabase/server'
 
 export async function GET() {
+  if (isMockMode()) {
+    return NextResponse.json({ data: getPartnerInterestsForPartner(MOCK_USERS.partner.id), error: null })
+  }
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ data: null, error: { message: 'Unauthorized' } }, { status: 401 })
@@ -23,6 +29,33 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  if (isMockMode()) {
+    const body = await request.json()
+    const { farmId, message } = body
+
+    if (!farmId) {
+      return NextResponse.json({ data: null, error: { message: 'farmId is required' } }, { status: 400 })
+    }
+
+    const verifiedFarm = getVerifiedFarms().find((entry) => entry.farm.id === farmId)
+    if (!verifiedFarm) {
+      return NextResponse.json({ data: null, error: { message: 'Farm is not yet verified' } }, { status: 400 })
+    }
+
+    const record = upsertMockRecord('partnerInterests', {
+      id: crypto.randomUUID(),
+      partnerId: MOCK_USERS.partner.id,
+      partnerName: MOCK_USERS.partner.fullName,
+      farmId,
+      farmName: verifiedFarm.farm.name,
+      message: typeof message === 'string' ? message.trim() : '',
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+    })
+
+    return NextResponse.json({ data: record, error: null }, { status: 201 })
+  }
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 

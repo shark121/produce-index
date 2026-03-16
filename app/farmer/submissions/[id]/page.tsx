@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button'
 import { SubmissionStatusBadge } from '@/components/ui/status-badge'
 import { formatDateTime } from '@/lib/utils'
 import { Upload, FileText } from 'lucide-react'
-import { MOCK_SUBMISSIONS, getCropsForFarm } from '@/lib/mock'
+import { getEvidenceForSubmission, getSubmissionById } from '@/lib/mock'
+import { SubmitReviewButton } from './submit-review-button'
 
 import { isMockMode } from '@/lib/is-mock-mode'
 const MOCK_MODE = isMockMode()
@@ -21,12 +22,11 @@ export default async function SubmissionDetailPage({ params }: Props) {
   const { id } = await params
 
   const submission = MOCK_MODE
-    ? MOCK_SUBMISSIONS.find((s) => s.id === id) ?? null
+    ? getSubmissionById(id)
     : null
+  const evidence = MOCK_MODE && submission ? getEvidenceForSubmission(id) : []
 
   if (!submission) notFound()
-
-  const crops = MOCK_MODE ? getCropsForFarm(submission.farmId) : []
 
   return (
     <div className="space-y-6 animate-fade-up">
@@ -77,7 +77,8 @@ export default async function SubmissionDetailPage({ params }: Props) {
         <h2 className="text-base font-semibold text-[#1C1C1E] mb-4">Evidence by category</h2>
         <div className="space-y-3">
           {CATEGORIES.map((cat, i) => {
-            const count = submission.status === 'verified' ? [2, 1, 2, 1, 1][i] : [1, 0, 1, 0, 0][i]
+            const key = ['nutritional_value', 'food_safety', 'supply_reliability', 'local_accessibility', 'affordability'][i]
+            const count = evidence.filter((asset) => asset.category === key).length
             return (
               <div key={cat} className="flex items-center justify-between py-2 border-b border-[rgba(0,0,0,0.05)] last:border-0">
                 <div className="flex items-center gap-2">
@@ -102,9 +103,9 @@ export default async function SubmissionDetailPage({ params }: Props) {
         <div className="surface-elevated rounded-[16px] p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <p className="text-sm font-medium text-[#1C1C1E]">Ready to submit?</p>
-            <p className="text-xs text-[#8E8E93] mt-0.5">Once submitted, moves to admin review queue.</p>
+            <p className="text-xs text-[#8E8E93] mt-0.5">Once submitted, PRI runs the scoring model and places this submission into admin review.</p>
           </div>
-          <Button size="sm" className="self-start sm:self-auto shrink-0">Submit for Review</Button>
+          <SubmitReviewButton submissionId={id} />
         </div>
       )}
     </div>

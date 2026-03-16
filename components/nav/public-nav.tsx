@@ -8,9 +8,11 @@ import { Button } from '@/components/ui/button'
 import { Leaf, Menu, X } from 'lucide-react'
 
 const links = [
+  { href: '/for-institutions', label: 'For Institutions' },
   { href: '/how-it-works', label: 'How It Works' },
   { href: '/for-farmers', label: 'For Farmers' },
-  { href: '/for-partners', label: 'For Partners' },
+  { href: '/for-partners', label: 'For Produce Buyers' },
+  { href: '/marketplace', label: 'Marketplace' },
 ]
 
 export function PublicNav() {
@@ -30,20 +32,23 @@ export function PublicNav() {
 
         {/* Desktop nav links */}
         <nav className="hidden md:flex items-center gap-1">
-          {links.map(({ href, label }) => (
+          {links.map(({ href, label }) => {
+            const active = pathname === href || pathname.startsWith(`${href}/`)
+            return (
             <Link
               key={href}
               href={href}
               className={cn(
                 'px-3 py-1.5 rounded-[8px] text-sm transition-colors',
-                pathname === href
+                active
                   ? 'bg-[rgba(0,0,0,0.06)] text-[#1C1C1E] font-medium'
                   : 'text-[#48484A] hover:text-[#1C1C1E] hover:bg-[rgba(0,0,0,0.04)]',
               )}
             >
               {label}
             </Link>
-          ))}
+            )
+          })}
         </nav>
 
         {/* Desktop CTA */}
@@ -52,7 +57,7 @@ export function PublicNav() {
             <Link href="/auth/login">Log in</Link>
           </Button>
           <Button size="sm" asChild>
-            <Link href="/apply">Apply to Pilot</Link>
+            <Link href="/apply">Request Pilot Access</Link>
           </Button>
         </div>
 
@@ -74,24 +79,27 @@ export function PublicNav() {
       {/* Mobile dropdown menu */}
       {open && (
         <div className="md:hidden border-t border-[rgba(0,0,0,0.06)] px-4 py-3 space-y-1">
-          {links.map(({ href, label }) => (
+          {links.map(({ href, label }) => {
+            const active = pathname === href || pathname.startsWith(`${href}/`)
+            return (
             <Link
               key={href}
               href={href}
               onClick={() => setOpen(false)}
               className={cn(
                 'block px-3 py-2.5 rounded-[10px] text-sm transition-colors',
-                pathname === href
+                active
                   ? 'bg-[rgba(0,0,0,0.06)] text-[#1C1C1E] font-medium'
                   : 'text-[#48484A] hover:bg-[rgba(0,0,0,0.04)]',
               )}
             >
               {label}
             </Link>
-          ))}
+            )
+          })}
           <div className="pt-2 pb-1">
             <Button size="sm" className="w-full" asChild>
-              <Link href="/apply" onClick={() => setOpen(false)}>Apply to Pilot</Link>
+              <Link href="/apply" onClick={() => setOpen(false)}>Request Pilot Access</Link>
             </Button>
           </div>
         </div>

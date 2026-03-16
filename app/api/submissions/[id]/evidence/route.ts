@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server'
+import { isMockMode } from '@/lib/is-mock-mode'
+import { getEvidenceForSubmission, getSubmissionById, upsertMockRecord } from '@/lib/mock'
 import { createClient } from '@/lib/supabase/server'
 import type { EvidenceCategory, EvidenceAssetType } from '@/lib/types'
 
@@ -6,6 +8,16 @@ interface Context { params: Promise<{ id: string }> }
 
 export async function GET(_req: Request, { params }: Context) {
   const { id } = await params
+
+  if (isMockMode()) {
+    const submission = getSubmissionById(id)
+    if (!submission || submission.farmId !== 'farm-1') {
+      return NextResponse.json({ data: null, error: { message: 'Submission not found' } }, { status: 404 })
+    }
+
+    return NextResponse.json({ data: getEvidenceForSubmission(id), error: null })
+  }
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ data: null, error: { message: 'Unauthorized' } }, { status: 401 })
@@ -25,6 +37,43 @@ const ALLOWED_TYPES = ['application/pdf', 'image/jpeg', 'image/png']
 
 export async function POST(request: Request, { params }: Context) {
   const { id } = await params
+
+  if (isMockMode()) {
+    const submission = getSubmissionById(id)
+    if (!submission || submission.farmId !== 'farm-1') {
+      return NextResponse.json({ data: null, error: { message: 'Submission not found' } }, { status: 404 })
+    }
+
+    const form = await request.formData()
+    const file = form.get('file') as File | null
+    const category = form.get('category') as EvidenceCategory | null
+
+    if (!file || !category) {
+      return NextResponse.json({ data: null, error: { message: 'file and category are required' } }, { status: 400 })
+    }
+
+    const assetType: EvidenceAssetType =
+      file.type === 'application/pdf' ? 'certification' :
+      file.name.toLowerCase().includes('test') ? 'lab_test_result' :
+      file.name.toLowerCase().includes('price') ? 'price_list' :
+      'photo'
+
+    const asset = upsertMockRecord('evidenceAssets', {
+      id: crypto.randomUUID(),
+      submissionId: id,
+      category,
+      type: assetType,
+      fileName: file.name,
+      storageKey: `mock/${id}/${category}/${file.name}`,
+      mimeType: file.type,
+      sizeBytes: file.size,
+      description: typeof form.get('description') === 'string' ? String(form.get('description')) : null,
+      uploadedAt: new Date().toISOString(),
+    })
+
+    return NextResponse.json({ data: asset, error: null }, { status: 201 })
+  }
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 

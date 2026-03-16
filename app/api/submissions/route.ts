@@ -1,7 +1,15 @@
 import { NextResponse } from 'next/server'
+import { isMockMode } from '@/lib/is-mock-mode'
+import { getAllSubmissions, getFarmById } from '@/lib/mock'
+import { persistMockSubmission } from '@/lib/submission-scoring-store'
 import { createClient } from '@/lib/supabase/server'
 
 export async function GET() {
+  if (isMockMode()) {
+    const submissions = getAllSubmissions().filter((submission) => submission.farmId === 'farm-1')
+    return NextResponse.json({ data: submissions, error: null })
+  }
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ data: null, error: { message: 'Unauthorized' } }, { status: 401 })
@@ -30,6 +38,33 @@ export async function GET() {
 }
 
 export async function POST() {
+  if (isMockMode()) {
+    const farm = getFarmById('farm-1')
+    if (!farm) {
+      return NextResponse.json(
+        { data: null, error: { message: 'Complete your farm profile before creating a submission' } },
+        { status: 400 },
+      )
+    }
+
+    const now = new Date().toISOString()
+    const submission = persistMockSubmission({
+      id: crypto.randomUUID(),
+      farmId: farm.id,
+      farmName: farm.name,
+      status: 'draft',
+      submittedAt: null,
+      reviewStartedAt: null,
+      reviewedAt: null,
+      verifiedAt: null,
+      adminNotes: null,
+      createdAt: now,
+      updatedAt: now,
+    })
+
+    return NextResponse.json({ data: submission, error: null }, { status: 201 })
+  }
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user || user.user_metadata?.role !== 'farmer') {

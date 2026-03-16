@@ -115,6 +115,29 @@ export interface EvidenceAsset {
   uploadedAt: string
 }
 
+export interface EvidenceObservation {
+  label: string
+  value: string
+  signal: 'positive' | 'neutral' | 'warning'
+}
+
+export interface EvidenceExtraction {
+  id: string
+  evidenceAssetId: string
+  submissionId: string
+  provider: 'openai' | 'heuristic'
+  model: string
+  category: EvidenceCategory
+  confidence: number
+  status: 'completed' | 'partial' | 'failed'
+  summary: string
+  extractedJson: Record<string, unknown>
+  normalizedObservations: EvidenceObservation[]
+  warnings: string[]
+  createdAt: string
+  updatedAt: string
+}
+
 // ─── Submissions ─────────────────────────────────────────────────────────────
 
 export type SubmissionStatus =
@@ -180,6 +203,49 @@ export const DEFAULT_WEIGHTS: ScoringWeights = {
   version: 'v1',
 }
 
+export interface ScoringConfig {
+  weights: ScoringWeights
+  benchmarkVersion: string
+  benchmarkSource: string
+  reviewMethod: string
+  updatedAt: string
+}
+
+export interface CategoryRecommendation {
+  category: EvidenceCategory
+  score: number
+  confidence: number
+  evidenceCoveragePct: number
+  reasonCodes: string[]
+  summary: string
+  warnings: string[]
+  features: Record<string, boolean | number | string | null>
+}
+
+export interface AutoScoringRun {
+  id: string
+  submissionId: string
+  farmId: string
+  modelVersion: string
+  benchmarkVersion: string
+  scoringMethod: 'hybrid'
+  status: 'completed' | 'partial' | 'failed'
+  featureVector: Record<string, boolean | number | string | null>
+  recommendedScores: Record<EvidenceCategory, CategoryRecommendation>
+  overallScore: number
+  confidenceSummary: number
+  warnings: string[]
+  createdAt: string
+  updatedAt: string
+}
+
+export interface ScoreOverride {
+  category: EvidenceCategory
+  recommendedScore: number
+  finalScore: number
+  reason: string
+}
+
 // ─── Review ───────────────────────────────────────────────────────────────────
 
 export interface ReviewDecision {
@@ -189,6 +255,11 @@ export interface ReviewDecision {
   decision: 'verified' | 'needs_changes'
   notes: string
   scoreSnapshotId: string | null
+  autoScoringRunId?: string | null
+  recommendedScores?: Partial<Record<EvidenceCategory, CategoryRecommendation>>
+  finalScores?: Partial<Record<EvidenceCategory, { subscore: number; notes: string; evidenceCoveragePct: number }>>
+  overrideReasons?: Partial<Record<EvidenceCategory, string>>
+  overrides?: ScoreOverride[]
   createdAt: string
 }
 
@@ -223,6 +294,231 @@ export interface PartnerInterest {
   createdAt: string
 }
 
+export interface VerificationConfidence {
+  score: number
+  label: 'High' | 'Moderate' | 'Developing'
+  auditedAssets: number
+  evidenceCoveragePct: number
+  lastReviewedAt: string
+}
+
+export interface HealthImpactSummary {
+  estimatedHealthyServings: number
+  lowIncomeReachPct: number
+  localDistributionPct: number
+  nearbyAccessPoints: number
+  narrative: string
+}
+
+export interface FinancingReadiness {
+  tier: 'ready' | 'watchlist' | 'emerging'
+  label: string
+  lenderSummary: string
+  benchmarkDelta: string
+  nextSeasonConfidence: number
+  seasonalityRisk: 'Low' | 'Moderate' | 'High'
+}
+
+export interface ScoreProvenance {
+  weightsVersion: string
+  benchmarkVersion: string
+  benchmarkSource: string
+  benchmarkRegion: string
+  reviewMethod: string
+  reviewedAt: string
+  evidenceCoveragePct: number
+}
+
+// ─── Marketplace / Exchange ──────────────────────────────────────────────────
+
+export type BuyerType = 'hospital' | 'school' | 'community_org' | 'individual'
+export type FulfillmentMethod = 'pickup' | 'delivery'
+export type MarketplaceListingType = 'weekly_offer' | 'catalog_item'
+export type MarketplaceListingStatus = 'draft' | 'published' | 'paused' | 'sold_out'
+export type MarketplaceOrderStatus = 'pending' | 'confirmed' | 'ready' | 'completed' | 'canceled'
+export type MarketplacePaymentStatus = 'pay_on_fulfillment'
+export type MarketplaceInquiryStatus = 'new' | 'reviewed'
+export type MarketplaceCommissionStatus = 'accrued' | 'invoiced'
+export type MarketplaceVolumeTier = 'small' | 'medium' | 'large' | 'enterprise'
+
+export type NutrientProfileTag =
+  | 'leafy_greens'
+  | 'fiber_rich'
+  | 'protein_legumes'
+  | 'vitamin_c_rich'
+  | 'iron_supporting'
+  | 'potassium_supporting'
+  | 'antioxidant_rich'
+
+export interface MarketplacePickupLocation {
+  id: string
+  farmId: string
+  sellerProfileId: string
+  label: string
+  address: string
+  pickupWindow: string
+  notes: string | null
+}
+
+export interface MarketplaceDeliveryZone {
+  id: string
+  farmId: string
+  sellerProfileId: string
+  label: string
+  areaSummary: string
+  deliveryFee: number
+  deliveryDays: string[]
+  notes: string | null
+}
+
+export interface MarketplaceSellerProfile {
+  id: string
+  farmId: string
+  publicDescription: string
+  contactEmail: string
+  contactPhone: string
+  orderInstructions: string
+  serviceDays: string[]
+  acceptsCommunityOrders: boolean
+  publishedAt: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface MarketplaceListing {
+  id: string
+  farmId: string
+  sellerProfileId: string
+  title: string
+  description: string
+  listingType: MarketplaceListingType
+  status: MarketplaceListingStatus
+  cropNames: string[]
+  nutrientTags: NutrientProfileTag[]
+  pricePerUnit: number
+  unit: string
+  quantityAvailable: number
+  minimumOrderQuantity: number
+  availabilityStart: string | null
+  availabilityEnd: string | null
+  acceptsBulkInquiries: boolean
+  acceptsSnap: boolean
+  offersSlidingScale: boolean
+  communityDiscountPct: number | null
+  pickupEnabled: boolean
+  deliveryEnabled: boolean
+  pickupLocationIds: string[]
+  deliveryZoneIds: string[]
+  createdAt: string
+  updatedAt: string
+}
+
+export interface MarketplaceOrderItem {
+  id: string
+  orderId: string
+  listingId: string
+  listingTitle: string
+  quantity: number
+  unit: string
+  unitPrice: number
+  lineTotal: number
+}
+
+export interface MarketplaceOrder {
+  id: string
+  farmId: string
+  buyerType: Extract<BuyerType, 'individual' | 'community_org'>
+  buyerName: string
+  buyerEmail: string
+  buyerPhone: string
+  fulfillmentMethod: FulfillmentMethod
+  pickupLocationId: string | null
+  deliveryZoneId: string | null
+  notes: string
+  subtotal: number
+  deliveryFee: number
+  total: number
+  status: MarketplaceOrderStatus
+  paymentStatus: MarketplacePaymentStatus
+  referenceCode: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface MarketplaceInquiry {
+  id: string
+  farmId: string
+  listingId: string | null
+  buyerType: Exclude<BuyerType, 'individual'>
+  organizationName: string
+  contactName: string
+  email: string
+  phone: string
+  volumeTier: MarketplaceVolumeTier
+  timingWindow: string
+  region: string
+  fulfillmentPreference: FulfillmentMethod | 'either'
+  notes: string
+  status: MarketplaceInquiryStatus
+  createdAt: string
+}
+
+export interface MarketplaceCommissionLedgerEntry {
+  id: string
+  farmId: string
+  orderId: string
+  ratePct: number
+  produceSubtotal: number
+  commissionAmount: number
+  status: MarketplaceCommissionStatus
+  createdAt: string
+}
+
+export interface BuyerMatchRequest {
+  buyerType: BuyerType
+  q?: string
+  region?: string
+  minPriScore?: number
+  nutrientTags?: NutrientProfileTag[]
+  fulfillmentMethod?: FulfillmentMethod
+  affordabilityNeeded?: boolean
+  snapPreferred?: boolean
+  volumeTier?: MarketplaceVolumeTier
+  availabilityWindow?: string
+}
+
+export interface MarketplaceSellerSignals {
+  hasPublishedListings: boolean
+  acceptsSnap: boolean
+  communityDiscountPct: number | null
+  supportsPickup: boolean
+  supportsDelivery: boolean
+}
+
+export interface MarketplaceListingView {
+  listing: MarketplaceListing
+  sellerProfile: MarketplaceSellerProfile
+  scorecard: FarmScorecard
+  pickupLocations: MarketplacePickupLocation[]
+  deliveryZones: MarketplaceDeliveryZone[]
+  nutrientTags: NutrientProfileTag[]
+  sellerSignals: MarketplaceSellerSignals
+}
+
+export interface MarketplaceMatchResult {
+  listingView: MarketplaceListingView
+  matchScore: number
+  reasons: string[]
+}
+
+export interface MarketplaceFarmMatchResult {
+  scorecard: FarmScorecard
+  sellerSignals: MarketplaceSellerSignals
+  nutrientTags: NutrientProfileTag[]
+  matchScore: number
+  reasons: string[]
+}
+
 // ─── Public scorecard (partner-visible) ──────────────────────────────────────
 
 export interface FarmScorecard {
@@ -231,6 +527,63 @@ export interface FarmScorecard {
   crops: Pick<CropProfile, 'id' | 'name' | 'seasonalAvailability' | 'certifications'>[]
   distributionChannels: DistributionChannel[]
   verifiedAt: string
+  verificationConfidence: VerificationConfidence
+  healthImpactSummary: HealthImpactSummary
+  financingReadiness: FinancingReadiness
+  scoreProvenance: ScoreProvenance
+}
+
+export type PilotApplicationType = 'farmer' | 'institution'
+
+export type InstitutionType =
+  | 'lender'
+  | 'health_system'
+  | 'grocery_partner'
+  | 'public_agency'
+  | 'nonprofit'
+
+export type InstitutionUseCase =
+  | 'underwriting'
+  | 'procurement'
+  | 'nutrition_program'
+  | 'community_health'
+  | 'impact_reporting'
+
+export type EstimatedVolumeRange =
+  | 'under_250k'
+  | '250k_to_1m'
+  | '1m_to_5m'
+  | 'over_5m'
+
+export interface PilotApplicationBase {
+  fullName: string
+  email: string
+  organizationName: string
+  region: string
+  notes: string
+}
+
+export interface FarmerPilotApplicationInput extends PilotApplicationBase {
+  type: 'farmer'
+  acreage: string
+  primaryCrops: string
+}
+
+export interface InstitutionPilotApplicationInput extends PilotApplicationBase {
+  type: 'institution'
+  organizationType: InstitutionType
+  useCase: InstitutionUseCase
+  estimatedVolume: EstimatedVolumeRange
+}
+
+export type PilotApplicationInput =
+  | FarmerPilotApplicationInput
+  | InstitutionPilotApplicationInput
+
+export type PilotApplicationRecord = PilotApplicationInput & {
+  id: string
+  createdAt: string
+  storageMode: 'mock-file' | 'supabase'
 }
 
 // ─── API response shapes ──────────────────────────────────────────────────────
@@ -278,7 +631,7 @@ export function scoreLabel(score: number): string {
 
 export const VALID_TRANSITIONS: Record<SubmissionStatus, SubmissionStatus[]> = {
   draft: ['submitted'],
-  submitted: ['under_review'],
+  submitted: ['under_review', 'verified', 'needs_changes'],
   under_review: ['verified', 'needs_changes'],
   verified: [],
   needs_changes: ['draft'],

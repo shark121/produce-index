@@ -1,30 +1,37 @@
 import type { Metadata } from 'next'
-import { Plus } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { ModeNotice } from '@/components/ui/mode-notice'
+import { isMockMode } from '@/lib/is-mock-mode'
+import { getCropsForFarm } from '@/lib/mock'
+import { normalizeCropRow } from '@/lib/farm-section-data'
+import { createClient } from '@/lib/supabase/server'
+import { CropsManager } from './crops-manager'
 
 export const metadata: Metadata = { title: 'Crops' }
 
-export default function CropsPage() {
-  // TODO: fetch crops for this farm from Supabase
+export default async function CropsPage() {
+  let initialCrops = getCropsForFarm('farm-1')
+
+  if (!isMockMode()) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user?.id) {
+      const { data: farm } = await supabase.from('farm_profiles').select('id').eq('user_id', user.id).single()
+      if (farm?.id) {
+        const { data } = await supabase.from('crop_profiles').select('*').eq('farm_id', farm.id).order('name')
+        initialCrops = (data ?? []).map((row) => normalizeCropRow(row))
+      }
+    }
+  }
 
   return (
     <div className="space-y-6 animate-fade-up">
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-[#1C1C1E]">Crops</h1>
-          <p className="text-sm text-[#8E8E93] mt-1">
-            List all crops you grow. Nutrient density and certifications feed into your Nutritional Value score.
-          </p>
-        </div>
-        <Button size="sm">
-          <Plus className="h-3.5 w-3.5" /> Add crop
-        </Button>
-      </div>
-
-      {/* TODO: CropList + CropForm components (Sprint 2) */}
-      <div className="surface-elevated rounded-[16px] p-10 text-center">
-        <p className="text-sm text-[#8E8E93]">No crops added yet. Add your first crop to get started.</p>
-      </div>
+      {isMockMode() && (
+        <ModeNotice
+          title="Crop edits are persisting locally in demo mode."
+          body="This lets the scoring engine and review panel react to your crop updates immediately, even before Supabase is connected."
+        />
+      )}
+      <CropsManager initialCrops={initialCrops} />
     </div>
   )
 }

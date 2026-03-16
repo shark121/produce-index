@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { CheckCircle2, FileText, Upload } from 'lucide-react'
+import { FileText, Upload } from 'lucide-react'
 
 const categories = [
   { key: 'nutritional_value',   label: 'Nutritional Value',   weight: '30%', required: ['Lab test results or USDA nutrient data', 'Crop variety list'] },
@@ -20,12 +20,6 @@ export function NewSubmissionForm() {
 
   async function handleCreate() {
     setLoading(true)
-    const mockMode = !process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_MOCK_MODE === 'true' || process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder')
-    if (mockMode) {
-      await new Promise(r => setTimeout(r, 600))
-      router.push('/farmer/submissions/sub-5/evidence')
-      return
-    }
     const res = await fetch('/api/submissions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

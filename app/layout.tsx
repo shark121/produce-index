@@ -1,18 +1,6 @@
+import type { CSSProperties } from 'react'
 import type { Metadata, Viewport } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
 import './globals.css'
-
-const geistSans = Geist({
-  variable: '--font-geist-sans',
-  subsets: ['latin'],
-  display: 'swap',
-})
-
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
-  subsets: ['latin'],
-  display: 'swap',
-})
 
 export const metadata: Metadata = {
   title: {
@@ -20,8 +8,8 @@ export const metadata: Metadata = {
     template: '%s | PRI',
   },
   description:
-    'A health-impact economic platform connecting verified small farmers with partners, lenders, and communities.',
-  keywords: ['produce', 'farming', 'nutrition', 'food access', 'community health'],
+    'Verified nutrition and supply intelligence for lenders, health systems, and buyers working with small farms.',
+  keywords: ['produce reliability index', 'farm financing', 'health systems', 'food access', 'community health'],
 }
 
 export const viewport: Viewport = {
@@ -33,8 +21,13 @@ export const viewport: Viewport = {
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const fontVariables = {
+    '--font-geist-sans': '"SF Pro Display", "Segoe UI", "Helvetica Neue", Arial, sans-serif',
+    '--font-geist-mono': '"SFMono-Regular", "SF Mono", Consolas, "Liberation Mono", monospace',
+  } as CSSProperties
+
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
+    <html lang="en" style={fontVariables}>
       <body className="min-h-screen antialiased">{children}</body>
     </html>
   )

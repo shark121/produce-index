@@ -112,6 +112,7 @@ export default async function FarmerDashboardPage() {
         <div className="grid md:grid-cols-2 gap-3">
           {[
             { href: '/farmer/submissions/new',  label: 'Start a new PRI submission',   desc: 'Submit farm data and evidence for scoring' },
+            { href: '/farmer/marketplace',      label: 'Manage marketplace workspace',  desc: 'Publish exchange listings and review incoming demand' },
             { href: '/farmer/recommendations',  label: 'View recommendations',          desc: 'See what to improve in your score' },
             { href: '/farmer/farm/crops',       label: 'Update crop profiles',          desc: 'Add new crops or edit existing ones' },
             { href: '/farmer/score',            label: 'Full score breakdown',          desc: 'See your category subscores in detail' },

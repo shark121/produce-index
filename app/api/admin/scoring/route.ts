@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { DEFAULT_WEIGHTS } from '@/lib/types'
+import { DEFAULT_SCORING_CONFIG, getCurrentScoringConfig } from '@/lib/scoring-config'
 
 export async function GET() {
   const supabase = await createClient()
-  // TODO: fetch from admin_config table; fall back to defaults
-  return NextResponse.json({ data: DEFAULT_WEIGHTS, error: null })
+  const config = await getCurrentScoringConfig(supabase)
+  return NextResponse.json({ data: config, error: null })
 }
 
 export async function PATCH(request: Request) {
@@ -28,13 +28,20 @@ export async function PATCH(request: Request) {
   }
 
   // TODO: insert new version row into admin_config table
+  const currentConfig = await getCurrentScoringConfig(supabase)
   const newVersion = {
-    nutritionalValue,
-    foodSafety,
-    supplyReliability,
-    localAccessibility,
-    affordability,
-    version: `v${Date.now()}`,
+    weights: {
+      nutritionalValue,
+      foodSafety,
+      supplyReliability,
+      localAccessibility,
+      affordability,
+      version: `v${Date.now()}`,
+    },
+    benchmarkVersion: currentConfig.benchmarkVersion ?? DEFAULT_SCORING_CONFIG.benchmarkVersion,
+    benchmarkSource: currentConfig.benchmarkSource ?? DEFAULT_SCORING_CONFIG.benchmarkSource,
+    reviewMethod: currentConfig.reviewMethod ?? DEFAULT_SCORING_CONFIG.reviewMethod,
+    updatedAt: new Date().toISOString(),
   }
 
   return NextResponse.json({ data: newVersion, error: null })

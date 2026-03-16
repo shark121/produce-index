@@ -1,38 +1,179 @@
 import { NextResponse } from 'next/server'
+import { isMockMode } from '@/lib/is-mock-mode'
 import { createClient } from '@/lib/supabase/server'
-import { canTransition, calculateOverallScore, DEFAULT_WEIGHTS } from '@/lib/types'
+import { calculateOverallScore, canTransition, type CategoryRecommendation, type EvidenceCategory } from '@/lib/types'
+import { computeDataCompleteness, getCurrentScoringConfig } from '@/lib/scoring-config'
+import { getMockDatabase, getSubmissionById, saveMockDatabase } from '@/lib/mock'
 
-/**
- * POST /api/admin/review
- * Body: {
- *   submissionId: string
- *   decision: 'verified' | 'needs_changes'
- *   scores: Record<category, { subscore: number; notes: string }>
- *   adminNotes: string
- * }
- *
- * This is the single endpoint that:
- * 1. Validates state transition
- * 2. Calculates and writes a PRIScoreSnapshot (if verified)
- * 3. Writes a ReviewDecision record
- * 4. Updates submission status
- */
-export async function POST(request: Request) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+interface ReviewScoreInput {
+  subscore: number
+  notes: string
+  evidenceCoveragePct: number
+  overrideReason?: string
+}
 
-  if (!user || user.user_metadata?.role !== 'admin') {
-    return NextResponse.json({ data: null, error: { message: 'Forbidden' } }, { status: 403 })
+function buildSubscores(scores: Record<string, ReviewScoreInput>) {
+  return {
+    nutritionalValue: scores.nutritional_value?.subscore ?? 0,
+    foodSafety: scores.food_safety?.subscore ?? 0,
+    supplyReliability: scores.supply_reliability?.subscore ?? 0,
+    localAccessibility: scores.local_accessibility?.subscore ?? 0,
+    affordability: scores.affordability?.subscore ?? 0,
+  }
+}
+
+function buildOverrides(
+  scores: Record<string, ReviewScoreInput>,
+  recommendedScores: Partial<Record<EvidenceCategory, CategoryRecommendation>>,
+) {
+  return (Object.entries(scores) as Array<[EvidenceCategory, ReviewScoreInput]>)
+    .filter(([category, score]) => (recommendedScores[category]?.score ?? score.subscore) !== score.subscore)
+    .map(([category, score]) => ({
+      category,
+      recommendedScore: recommendedScores[category]?.score ?? score.subscore,
+      finalScore: score.subscore,
+      reason: score.overrideReason?.trim() ?? '',
+    }))
+}
+
+function validateOverrides(
+  scores: Record<string, ReviewScoreInput>,
+  recommendedScores: Partial<Record<EvidenceCategory, CategoryRecommendation>>,
+) {
+  for (const [category, score] of Object.entries(scores) as Array<[EvidenceCategory, ReviewScoreInput]>) {
+    const recommended = recommendedScores[category]?.score
+    if (typeof recommended === 'number' && recommended !== score.subscore && !score.overrideReason?.trim()) {
+      return `Override reason is required for ${category.replaceAll('_', ' ')}`
+    }
   }
 
+  return null
+}
+
+export async function POST(request: Request) {
   const body = await request.json()
-  const { submissionId, decision, scores, adminNotes } = body
+  const {
+    submissionId,
+    decision,
+    scores,
+    adminNotes,
+    recommendedScores = {},
+    autoScoringRunId = null,
+  } = body as {
+    submissionId?: string
+    decision?: 'verified' | 'needs_changes'
+    scores?: Record<string, ReviewScoreInput>
+    adminNotes?: string
+    recommendedScores?: Partial<Record<EvidenceCategory, CategoryRecommendation>>
+    autoScoringRunId?: string | null
+  }
 
   if (!submissionId || !decision || !scores) {
     return NextResponse.json(
       { data: null, error: { message: 'submissionId, decision, and scores are required' } },
       { status: 400 },
     )
+  }
+
+  const overrideError = validateOverrides(scores, recommendedScores)
+  if (overrideError) {
+    return NextResponse.json({ data: null, error: { message: overrideError } }, { status: 400 })
+  }
+
+  if (decision === 'needs_changes' && !adminNotes?.trim()) {
+    return NextResponse.json(
+      { data: null, error: { message: 'Admin notes are required when requesting changes' } },
+      { status: 400 },
+    )
+  }
+
+  if (isMockMode()) {
+    const submission = getSubmissionById(submissionId)
+    if (!submission) {
+      return NextResponse.json({ data: null, error: { message: 'Submission not found' } }, { status: 404 })
+    }
+
+    if (!canTransition(submission.status, decision)) {
+      return NextResponse.json(
+        { data: null, error: { message: `Cannot transition from ${submission.status} to ${decision}` } },
+        { status: 409 },
+      )
+    }
+
+    const config = await getCurrentScoringConfig()
+    const subscores = buildSubscores(scores)
+    const overallScore = calculateOverallScore(subscores, config.weights)
+    const dataCompleteness = computeDataCompleteness(scores)
+    const now = new Date().toISOString()
+    const database = getMockDatabase()
+    let scoreSnapshot: typeof database.scoreSnapshots[number] | null = null
+
+    if (decision === 'verified') {
+      scoreSnapshot = {
+        id: crypto.randomUUID(),
+        submissionId,
+        farmId: submission.farmId,
+        nutritionalValue: subscores.nutritionalValue,
+        foodSafety: subscores.foodSafety,
+        supplyReliability: subscores.supplyReliability,
+        localAccessibility: subscores.localAccessibility,
+        affordability: subscores.affordability,
+        overallScore: Math.round(overallScore * 10) / 10,
+        dataCompleteness,
+        verificationStatus: 'verified',
+        weightsVersion: config.weights.version,
+        benchmarkVersion: config.benchmarkVersion,
+        calculatedAt: now,
+        calculatedBy: 'user-admin-1',
+      }
+
+      database.scoreSnapshots = [scoreSnapshot, ...database.scoreSnapshots.filter((snapshot) => snapshot.id !== scoreSnapshot?.id)]
+    }
+
+    database.reviewDecisions = [
+      {
+        id: crypto.randomUUID(),
+        submissionId,
+        adminId: 'user-admin-1',
+        decision,
+        notes: adminNotes?.trim() ?? '',
+        scoreSnapshotId: scoreSnapshot?.id ?? null,
+        autoScoringRunId,
+        recommendedScores,
+        finalScores: scores,
+        overrideReasons: Object.fromEntries(
+          Object.entries(scores)
+            .filter(([, value]) => value.overrideReason?.trim())
+            .map(([key, value]) => [key, value.overrideReason?.trim()]),
+        ),
+        overrides: buildOverrides(scores, recommendedScores),
+        createdAt: now,
+      },
+      ...database.reviewDecisions,
+    ]
+
+    database.submissions = database.submissions.map((entry) => entry.id === submissionId
+      ? {
+        ...entry,
+        status: decision,
+        adminNotes: adminNotes?.trim() ?? null,
+        reviewedAt: now,
+        verifiedAt: decision === 'verified' ? now : entry.verifiedAt,
+        updatedAt: now,
+      }
+      : entry)
+
+    saveMockDatabase(database)
+
+    const updatedSubmission = database.submissions.find((entry) => entry.id === submissionId) ?? null
+    return NextResponse.json({ data: { submission: updatedSubmission, scoreSnapshot }, error: null })
+  }
+
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user || user.user_metadata?.role !== 'admin') {
+    return NextResponse.json({ data: null, error: { message: 'Forbidden' } }, { status: 403 })
   }
 
   const { data: submission, error: fetchError } = await supabase
@@ -45,7 +186,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ data: null, error: { message: 'Submission not found' } }, { status: 404 })
   }
 
-  if (!canTransition(submission.status, decision === 'verified' ? 'verified' : 'needs_changes')) {
+  if (!canTransition(submission.status, decision)) {
     return NextResponse.json(
       { data: null, error: { message: `Cannot transition from ${submission.status} to ${decision}` } },
       { status: 409 },
@@ -55,17 +196,10 @@ export async function POST(request: Request) {
   let scoreSnapshot = null
 
   if (decision === 'verified') {
-    // Build subscores from admin review inputs
-    const subscores = {
-      nutritionalValue:   scores.nutritional_value?.subscore ?? 0,
-      foodSafety:         scores.food_safety?.subscore ?? 0,
-      supplyReliability:  scores.supply_reliability?.subscore ?? 0,
-      localAccessibility: scores.local_accessibility?.subscore ?? 0,
-      affordability:      scores.affordability?.subscore ?? 0,
-    }
-
-    const weights = DEFAULT_WEIGHTS  // TODO: fetch current config version
-    const overallScore = calculateOverallScore(subscores, weights)
+    const config = await getCurrentScoringConfig(supabase as never)
+    const subscores = buildSubscores(scores)
+    const overallScore = calculateOverallScore(subscores, config.weights)
+    const dataCompleteness = computeDataCompleteness(scores)
 
     const { data: snap, error: snapError } = await supabase
       .from('pri_score_snapshots')
@@ -78,10 +212,10 @@ export async function POST(request: Request) {
         local_accessibility: subscores.localAccessibility,
         affordability: subscores.affordability,
         overall_score: Math.round(overallScore * 10) / 10,
-        data_completeness: 1,
+        data_completeness: dataCompleteness,
         verification_status: 'verified',
-        weights_version: weights.version,
-        benchmark_version: 'v1',
+        weights_version: config.weights.version,
+        benchmark_version: config.benchmarkVersion,
         calculated_at: new Date().toISOString(),
         calculated_by: user.id,
       })
@@ -93,36 +227,47 @@ export async function POST(request: Request) {
     }
 
     scoreSnapshot = snap
+  }
 
-    // Audit log
-    await supabase.from('score_audit_log').insert({
-      snapshot_id: snap.id,
+  const reviewDecisionPayload = {
+    submission_id: submissionId,
+    admin_id: user.id,
+    decision,
+    notes: adminNotes?.trim() ?? '',
+    score_snapshot_id: scoreSnapshot?.id ?? null,
+    auto_scoring_run_id: autoScoringRunId,
+    recommended_scores: recommendedScores,
+    final_scores: scores,
+    override_reasons: Object.fromEntries(
+      Object.entries(scores)
+        .filter(([, value]) => value.overrideReason?.trim())
+        .map(([key, value]) => [key, value.overrideReason?.trim()]),
+    ),
+    created_at: new Date().toISOString(),
+  }
+
+  let reviewInsert = await supabase.from('review_decisions').insert(reviewDecisionPayload)
+  if (reviewInsert.error) {
+    reviewInsert = await supabase.from('review_decisions').insert({
       submission_id: submissionId,
-      farm_id: submission.farm_id,
-      triggered_by: user.id,
-      input_hash: Buffer.from(JSON.stringify(subscores)).toString('base64'),
-      weights_version: weights.version,
+      admin_id: user.id,
+      decision,
+      notes: adminNotes?.trim() ?? '',
+      score_snapshot_id: scoreSnapshot?.id ?? null,
       created_at: new Date().toISOString(),
     })
   }
 
-  // Write review decision record
-  await supabase.from('review_decisions').insert({
-    submission_id: submissionId,
-    admin_id: user.id,
-    decision,
-    notes: adminNotes ?? '',
-    score_snapshot_id: scoreSnapshot?.id ?? null,
-    created_at: new Date().toISOString(),
-  })
+  if (reviewInsert.error) {
+    return NextResponse.json({ data: null, error: { message: reviewInsert.error.message } }, { status: 500 })
+  }
 
-  // Update submission status
   const now = new Date().toISOString()
   const { data: updated, error: updateError } = await supabase
     .from('pri_submissions')
     .update({
       status: decision,
-      admin_notes: adminNotes ?? null,
+      admin_notes: adminNotes?.trim() ?? null,
       reviewed_at: now,
       ...(decision === 'verified' ? { verified_at: now } : {}),
       updated_at: now,

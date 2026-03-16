@@ -18,17 +18,17 @@ const steps = [
   {
     icon: ShieldCheck,
     title: 'Admin reviews and verifies',
-    body: 'Our team reviews each submission, checks evidence, and runs the scoring engine. Farmers receive feedback if anything is missing.',
+    body: 'Our team reviews each submission, scores evidence coverage by category, and runs the scoring engine against a versioned benchmark pack. Farmers receive feedback if anything is missing.',
   },
   {
     icon: Star,
     title: 'Score is published',
-    body: 'Verified farms appear in the partner directory with their full PRI scorecard — broken down by all five categories.',
+    body: 'Verified farms appear with a full PRI scorecard, confidence disclosure, evidence coverage, and benchmark/version provenance.',
   },
   {
     icon: CheckCircle2,
-    title: 'Partners connect',
-    body: 'Hospitals, grocery partners, and lenders browse verified farms, compare scores, and express partnership interest.',
+    title: 'Institutions make decisions',
+    body: 'Lenders, health systems, and produce buyers browse verified farms, compare scorecards, and use PRI as decision support.',
   },
 ]
 
@@ -39,8 +39,8 @@ export default function HowItWorksPage() {
       <main className="mx-auto max-w-3xl px-4 md:px-6 py-12 md:py-20">
         <h1 className="text-4xl font-bold text-[#1C1C1E] tracking-tight mb-4">How PRI Works</h1>
         <p className="text-lg text-[#48484A] leading-relaxed mb-16">
-          The Produce Reliability Index is a transparent, evidence-backed scoring process. Here is
-          what happens from application to verified score.
+          The Produce Reliability Index is a transparent, evidence-backed scoring process that turns
+          farm documentation into institution-ready decision support.
         </p>
 
         <div className="space-y-6">
@@ -62,7 +62,8 @@ export default function HowItWorksPage() {
         <div className="mt-16">
           <h2 className="text-2xl font-bold text-[#1C1C1E] mb-2">The scoring model</h2>
           <p className="text-[#48484A] mb-8">
-            Five categories combine into one overall PRI score from 0 to 100.
+            Five categories combine into one overall PRI score from 0 to 100. Every published score
+            is paired with evidence coverage and benchmark provenance.
           </p>
           <div className="space-y-3">
             {[
@@ -86,6 +87,30 @@ export default function HowItWorksPage() {
                 <p className="text-xs text-[#8E8E93]">{desc}</p>
               </div>
             ))}
+          </div>
+        </div>
+
+        <div className="mt-16 grid gap-4 md:grid-cols-3">
+          <div className="surface-elevated rounded-[16px] p-5">
+            <p className="text-xs uppercase tracking-[0.16em] text-[#8E8E93]">Evidence coverage</p>
+            <p className="mt-2 text-sm leading-relaxed text-[#48484A]">
+              Reviewers capture how complete the evidence is by category so institutions can judge
+              confidence, not just score.
+            </p>
+          </div>
+          <div className="surface-elevated rounded-[16px] p-5">
+            <p className="text-xs uppercase tracking-[0.16em] text-[#8E8E93]">Versioned benchmarks</p>
+            <p className="mt-2 text-sm leading-relaxed text-[#48484A]">
+              Weight versions and benchmark versions are disclosed so lenders and health systems know
+              exactly which rules produced a scorecard.
+            </p>
+          </div>
+          <div className="surface-elevated rounded-[16px] p-5">
+            <p className="text-xs uppercase tracking-[0.16em] text-[#8E8E93]">Institution packet</p>
+            <p className="mt-2 text-sm leading-relaxed text-[#48484A]">
+              The published output includes financing readiness, local-access indicators, and
+              health-impact signals alongside the PRI score.
+            </p>
           </div>
         </div>
       </main>

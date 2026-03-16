@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { Badge } from '@/components/ui/badge'
 import { formatDate } from '@/lib/utils'
 import type { PartnerInterest } from '@/lib/types'
-import { MOCK_INTERESTS } from '@/lib/mock'
+import { MOCK_USERS, getPartnerInterestsForPartner } from '@/lib/mock'
 
 import { isMockMode } from '@/lib/is-mock-mode'
 const MOCK_MODE = isMockMode()
@@ -15,7 +15,7 @@ const statusVariant: Record<PartnerInterest['status'], 'default' | 'blue' | 'gre
 }
 
 export default async function InterestsPage() {
-  const interests = MOCK_MODE ? MOCK_INTERESTS : []
+  const interests = MOCK_MODE ? getPartnerInterestsForPartner(MOCK_USERS.partner.id) : []
 
   return (
     <div className="space-y-6 animate-fade-up">
@@ -26,7 +26,10 @@ export default async function InterestsPage() {
 
       {interests.length === 0 ? (
         <div className="surface-elevated rounded-[20px] p-12 text-center">
-          <p className="text-sm text-[#8E8E93]">No interests yet. Browse the directory and express interest on any farm scorecard.</p>
+          <p className="text-sm text-[#8E8E93]">
+            No interests yet. Use the verified directory and compare views to build a shortlist while
+            live interest capture is being finalized.
+          </p>
         </div>
       ) : (
         <div className="space-y-3">

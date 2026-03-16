@@ -1,10 +1,29 @@
 import { NextResponse } from 'next/server'
+import { isMockMode } from '@/lib/is-mock-mode'
+import { getEvidenceForSubmission, getSubmissionById } from '@/lib/mock'
+import { persistMockSubmission } from '@/lib/submission-scoring-store'
 import { createClient } from '@/lib/supabase/server'
 
 interface Context { params: Promise<{ id: string }> }
 
 export async function GET(_req: Request, { params }: Context) {
   const { id } = await params
+
+  if (isMockMode()) {
+    const submission = getSubmissionById(id)
+    if (!submission || submission.farmId !== 'farm-1') {
+      return NextResponse.json({ data: null, error: { message: 'Submission not found' } }, { status: 404 })
+    }
+
+    return NextResponse.json({
+      data: {
+        ...submission,
+        evidence_assets: getEvidenceForSubmission(id),
+      },
+      error: null,
+    })
+  }
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ data: null, error: { message: 'Unauthorized' } }, { status: 401 })
@@ -31,6 +50,23 @@ export async function GET(_req: Request, { params }: Context) {
 
 export async function PATCH(request: Request, { params }: Context) {
   const { id } = await params
+
+  if (isMockMode()) {
+    const submission = getSubmissionById(id)
+    if (!submission || submission.farmId !== 'farm-1') {
+      return NextResponse.json({ data: null, error: { message: 'Submission not found' } }, { status: 404 })
+    }
+
+    const body = await request.json()
+    const updated = persistMockSubmission({
+      ...submission,
+      ...body,
+      updatedAt: new Date().toISOString(),
+    })
+
+    return NextResponse.json({ data: updated, error: null })
+  }
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ data: null, error: { message: 'Unauthorized' } }, { status: 401 })

@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
+import { deleteMockRecord, getMockDatabase, getSubmissionById } from '@/lib/mock'
 import { createClient } from '@/lib/supabase/server'
+import { isMockMode } from '@/lib/is-mock-mode'
 
 interface Context { params: Promise<{ id: string }> }
 
@@ -9,6 +11,16 @@ interface Context { params: Promise<{ id: string }> }
  */
 export async function GET(_req: Request, { params }: Context) {
   const { id } = await params
+
+  if (isMockMode()) {
+    const asset = getMockDatabase().evidenceAssets.find((entry) => entry.id === id)
+    if (!asset) {
+      return NextResponse.json({ data: null, error: { message: 'Evidence not found' } }, { status: 404 })
+    }
+
+    return NextResponse.json({ data: { signedUrl: asset.storageKey }, error: null })
+  }
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ data: null, error: { message: 'Unauthorized' } }, { status: 401 })
@@ -37,6 +49,25 @@ export async function GET(_req: Request, { params }: Context) {
  */
 export async function DELETE(_req: Request, { params }: Context) {
   const { id } = await params
+
+  if (isMockMode()) {
+    const asset = getMockDatabase().evidenceAssets.find((entry) => entry.id === id)
+    if (!asset) {
+      return NextResponse.json({ data: null, error: { message: 'Not found' } }, { status: 404 })
+    }
+
+    const submission = getSubmissionById(asset.submissionId)
+    if (submission?.status !== 'draft') {
+      return NextResponse.json(
+        { data: null, error: { message: 'Evidence can only be deleted while submission is in draft' } },
+        { status: 409 },
+      )
+    }
+
+    deleteMockRecord('evidenceAssets', id)
+    return NextResponse.json({ data: { deleted: true }, error: null })
+  }
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
